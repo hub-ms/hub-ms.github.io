@@ -1,41 +1,133 @@
-<!-- 리포지토리 루트 또는 /verify 폴더 안에 index.html로 생성 -->
 <!DOCTYPE html>
 <html>
 <head>
-    <title>이메일 인증 중...</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>수면 앱 - 이메일 인증</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+        .container { 
+            background: rgba(255,255,255,0.95); 
+            backdrop-filter: blur(20px);
+            border-radius: 24px; 
+            padding: 48px; 
+            text-align: center; 
+            max-width: 500px; width: 100%;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2); 
+        }
+        .checkmark { font-size: 80px; margin-bottom: 24px; }
+        .title { font-size: 28px; font-weight: 700; color: #1e293b; margin-bottom: 16px; }
+        .message { font-size: 16px; color: #64748b; line-height: 1.6; margin-bottom: 24px; }
+        .retry-btn { 
+            background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+            color: white; padding: 16px 32px; border: none; border-radius: 12px;
+            font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s;
+            text-decoration: none; display: inline-block;
+        }
+        .retry-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(74,222,128,0.4); }
+        .debug { background: #f8fafc; border-radius: 8px; padding: 16px; margin-top: 24px; font-family: monospace; font-size: 12px; color: #475569; }
+        .error { color: #ef4444; }
+        .success { color: #10b981; }
+    </style>
 </head>
 <body>
-    <div id="message">인증 처리 중입니다. 잠시만 기다려주세요...</div>
+    <div class="container">
+        <div id="icon" class="checkmark">🔄</div>
+        <h1 id="title" class="title">인증 처리 중입니다</h1>
+        <p id="message" class="message">잠시만 기다려주세요...</p>
+        <div id="debug" class="debug" style="display:none;"></div>
+    </div>
 
     <script>
-        window.onload = function() {
-        const params = new URLSearchParams(window.location.search);
-        const email = params.get('email');
-        const code = params.get('code');
-    
-        // 디버깅용: 콘솔에서 파라미터가 잘 찍히는지 확인하세요 (F12 누르면 보임)
-        console.log("Email:", email, "Code:", code);
-    
-        if (email && code) {
-            fetch('https://pseudomiraculous-shamika-uncoalescent.ngrok-free.dev', {
+        (function() {
+            const params = new URLSearchParams(window.location.search);
+            const rawEmail = params.get('email');
+            const rawCode = params.get('code');
+            
+            // URL 디코딩 (중요!)
+            const email = decodeURIComponent(rawEmail || '');
+            const code = decodeURIComponent(rawCode || '');
+            
+            const debugDiv = document.getElementById('debug');
+            const messageDiv = document.getElementById('message');
+            const titleDiv = document.getElementById('title');
+            const iconDiv = document.getElementById('icon');
+            
+            // 디버깅 정보 표시
+            debugDiv.innerHTML = `
+                <strong>디버깅 정보:</strong><br>
+                원본 URL: ${window.location.href}<br>
+                Raw Email: ${rawEmail}<br>
+                Decoded Email: <span class="${email ? '' : 'error'}">${email}</span><br>
+                Raw Code: ${rawCode}<br>
+                Decoded Code: <span class="${code ? '' : 'error'}">${code}</span>
+            `;
+            debugDiv.style.display = 'block';
+            
+            console.log('🔍 Debug:', { rawEmail, rawCode, email, code });
+            
+            if (!email || !code) {
+                iconDiv.textContent = '❌';
+                titleDiv.textContent = '인증 링크 오류';
+                messageDiv.innerHTML = '올바른 인증 링크가 아닙니다.<br>수면 앱에서 인증번호를 직접 입력해주세요.';
+                return;
+            }
+            
+            // 현재 ngrok URL (실제 서버 URL로 변경 필요)
+            const SERVER_URL = 'https://pseudomiraculous-shamika-uncoalescent.ngrok-free.dev/api/auth/verify';
+            
+            fetch(SERVER_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: email, code: code })
+                headers: { 
+                    'Content-Type': 'application/json',
+                    // CORS 허용을 위한 헤더 (필요시)
+                },
+                body: JSON.stringify({ 
+                    email: email, 
+                    code: code 
+                })
             })
             .then(response => {
+                console.log('📡 Server response:', response.status, response.statusText);
+                
                 if (response.ok) {
-                    document.getElementById('message').innerHTML = "✨ <b>인증 성공!</b> 앱으로 돌아가주세요.";
+                    iconDiv.textContent = '✅';
+                    titleDiv.textContent = '인증 완료!';
+                    messageDiv.innerHTML = `
+                        이메일 인증이 <strong>성공적으로 완료</strong>되었습니다.<br>
+                        수면 앱으로 돌아가 확인해주세요! 😊
+                    `;
+                    debugDiv.className = 'debug success';
+                    
+                    // 3초 후 딥링크 시도
+                    setTimeout(() => {
+                        window.location.href = `sleepapp://auth-complete?email=${encodeURIComponent(email)}&code=${code}`;
+                    }, 3000);
+                    
                 } else {
-                    document.getElementById('message').innerText = "인증 실패: 만료되었거나 이미 사용된 코드입니다.";
+                    return response.text().then(text => {
+                        throw new Error(`HTTP ${response.status}: ${text}`);
+                    });
                 }
             })
-            .catch(err => {
-                document.getElementById('message').innerText = "서버 연결 오류(ngrok 상태를 확인하세요).";
+            .catch(error => {
+                console.error('❌ Fetch error:', error);
+                iconDiv.textContent = '⚠️';
+                titleDiv.textContent = '인증 확인 중 오류';
+                messageDiv.innerHTML = `
+                    서버와 연결할 수 없습니다.<br>
+                    <small>수면 앱에서 인증번호를 직접 입력해주세요.</small>
+                `;
+                debugDiv.className = 'debug error';
+                debugDiv.innerHTML += `<br><strong>오류:</strong> ${error.message}`;
             });
-        } else {
-            document.getElementById('message').innerText = "URL 파라미터 누락 (잘못된 접근입니다).";
-        }
-    };
+        })();
     </script>
 </body>
 </html>
