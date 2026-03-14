@@ -9,31 +9,33 @@
 
     <script>
         window.onload = function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const email = urlParams.get('email');
-            const code = urlParams.get('code');
-
-            if (email && code) {
-                // Spring Boot 서버의 실제 주소로 변경하세요.
-                fetch('https://pseudomiraculous-shamika-uncoalescent.ngrok-free.dev', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email, code: code })
-                })
-                .then(response => {
-                    if (response.ok) {
-                        document.getElementById('message').innerText = "인증 성공! 이제 앱으로 돌아가셔도 됩니다. 😊";
-                    } else {
-                        document.getElementById('message').innerText = "인증 실패: 만료되었거나 잘못된 코드입니다.";
-                    }
-                })
-                .catch(err => {
-                    document.getElementById('message').innerText = "서버 연결 오류가 발생했습니다.";
-                });
-            } else {
-                document.getElementById('message').innerText = "잘못된 접근입니다.";
-            }
-        };
+        const params = new URLSearchParams(window.location.search);
+        const email = params.get('email');
+        const code = params.get('code');
+    
+        // 디버깅용: 콘솔에서 파라미터가 잘 찍히는지 확인하세요 (F12 누르면 보임)
+        console.log("Email:", email, "Code:", code);
+    
+        if (email && code) {
+            fetch('https://pseudomiraculous-shamika-uncoalescent.ngrok-free.dev', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email, code: code })
+            })
+            .then(response => {
+                if (response.ok) {
+                    document.getElementById('message').innerHTML = "✨ <b>인증 성공!</b> 앱으로 돌아가주세요.";
+                } else {
+                    document.getElementById('message').innerText = "인증 실패: 만료되었거나 이미 사용된 코드입니다.";
+                }
+            })
+            .catch(err => {
+                document.getElementById('message').innerText = "서버 연결 오류(ngrok 상태를 확인하세요).";
+            });
+        } else {
+            document.getElementById('message').innerText = "URL 파라미터 누락 (잘못된 접근입니다).";
+        }
+    };
     </script>
 </body>
 </html>
