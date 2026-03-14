@@ -1,0 +1,39 @@
+<!-- 리포지토리 루트 또는 /verify 폴더 안에 index.html로 생성 -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>이메일 인증 중...</title>
+</head>
+<body>
+    <div id="message">인증 처리 중입니다. 잠시만 기다려주세요...</div>
+
+    <script>
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const email = urlParams.get('email');
+            const code = urlParams.get('code');
+
+            if (email && code) {
+                // Spring Boot 서버의 실제 주소로 변경하세요.
+                fetch('https://your-spring-api.com', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email, code: code })
+                })
+                .then(response => {
+                    if (response.ok) {
+                        document.getElementById('message').innerText = "인증 성공! 이제 앱으로 돌아가셔도 됩니다. 😊";
+                    } else {
+                        document.getElementById('message').innerText = "인증 실패: 만료되었거나 잘못된 코드입니다.";
+                    }
+                })
+                .catch(err => {
+                    document.getElementById('message').innerText = "서버 연결 오류가 발생했습니다.";
+                });
+            } else {
+                document.getElementById('message').innerText = "잘못된 접근입니다.";
+            }
+        };
+    </script>
+</body>
+</html>
