@@ -88,7 +88,8 @@
             .then(response => {
                 console.log('📡 Server response:', response.status);
                 if (response.ok) {
-                    window.location.replace(`sleepapp://auth/auto-complete?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`);
+                    const deepLink = `sleepapp://auth/auto-complete?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`;
+                    window.location.replace(deepLink);
                     return; 
                 }
                 return response.text().then(text => {
@@ -96,10 +97,9 @@
                 });
             })
             .catch(error => {
-                iconDiv.textContent = '⚠️';
-                titleDiv.textContent = '인증 확인 중 오류';
-                messageDiv.innerHTML = '수면 앱에서 인증번호를 직접 입력해주세요.';
-                debugDiv.innerHTML += `<br><strong>오류:</strong> ${error.message}`;
+                console.error('❌ 검증 실패:', error);
+                document.getElementById('icon').textContent = '⚠️';
+                document.getElementById('title').textContent = '인증 확인 중 오류';
             });
         })();
     </script>
